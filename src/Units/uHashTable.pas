@@ -30,10 +30,11 @@ type
 
     procedure Insert(const Rec: TDataRecord);
     function Find(const Key: TKey; out Data: TSearchDataRecord): Boolean;
+    function GetBucket(const Index: Integer; out Data: TBucket): Boolean;
     procedure Delete(const Key: TKey);
     procedure Clear;
     procedure LoadFromFile(const FileName: string);
-    function SearchFromKeys(const Keys: TOccupiedKeys): integer;
+    function SearchFromKeys(const Keys: TOccupiedKeys): Integer;
 
     property Count: UInt32 read FCount;
     property Main: UInt32 read FMain;
@@ -123,12 +124,11 @@ begin
   SearchStart := Now;
   Index := FHashFunc(Key, FTableSize);
   Bucket := @FBuckets[Index];
-
   for i := 0 to Bucket^.Len - 1 do
   begin
     if Bucket^.Data[i].Key = Key then
     begin
-      Data.Bucket := i + 1;
+      Data.Bucket := Index + 1;
       Data.Time := (Now - SearchStart) * 86400;
       Exit(True);
     end;
@@ -139,7 +139,7 @@ begin
   begin
     if TempNode^.Data.Key = Key then
     begin
-      Data.Bucket := i + 1;
+      Data.Bucket := Index + 1;
       Data.Time := (Now - SearchStart) * 86400;
       Exit(True);
     end;
@@ -147,6 +147,18 @@ begin
   end;
 
   Result := False;
+end;
+
+function THashTable.GetBucket(const Index: Integer; out Data: TBucket): Boolean;
+begin
+  Result := False;
+
+  if (Index < 0) or (Index >= FTableSize) then
+    Exit;
+
+  Data := FBuckets[Index];
+  Result := True;
+
 end;
 
 procedure THashTable.Delete(const Key: TKey);
@@ -216,7 +228,9 @@ procedure THashTable.LoadFromFile(const FileName: string);
 var
   F: File of TDataRecord;
   Rec: TDataRecord;
+  I: UInt32;
 begin
+  I := 0;
   FInsertStart := Now;
   try
     AssignFile(F, FileName);
@@ -237,43 +251,43 @@ end;
 function THashTable.SearchFromKeys(const Keys: TOccupiedKeys): Integer;
 var
   Data: TSearchDataRecord;
-  I, Finded: Integer;
+  i, Finded: Integer;
 begin
   Finded := 0;
   FSearchStart := Now;
-  for i := low(keys) to high(keys) do
+  for i := low(Keys) to high(Keys) do
   begin
-    if Find(keys[i], data) then
-      Inc(finded);
+    if Find(Keys[i], Data) then
+      Inc(Finded);
   end;
   FSearchTime := (Now - FSearchStart) * 86400;
   Result := Finded;
 end;
 
-//procedure THashTable.SaveToFile(const FileName: string);
-//var
-//  F: File of TDataRecord;
-//  i: Integer;
-//  Node: TBucket;
-//begin
-//  AssignFile(F, FileName);
-//  Rewrite(F);
+// procedure THashTable.SaveToFile(const FileName: string);
+// var
+// F: File of TDataRecord;
+// i: Integer;
+// Node: TBucket;
+// begin
+// AssignFile(F, FileName);
+// Rewrite(F);
 //
-//  try
-//    for i := 0 to FTableSize - 1 do
-//    begin
-//      Rec := FBuckets[i];
-//      while Node <> nil do
-//      begin
-//        Write(F, Node^.Data);
-//        Node := Node^.Next;
-//      end;
-//    end;
+// try
+// for i := 0 to FTableSize - 1 do
+// begin
+// Rec := FBuckets[i];
+// while Node <> nil do
+// begin
+// Write(F, Node^.Data);
+// Node := Node^.Next;
+// end;
+// end;
 //
-//  finally
-//    CloseFile(F);
-//  end;
-//end;
+// finally
+// CloseFile(F);
+// end;
+// end;
 
 function THashTable.LoadFactor: Double;
 begin
@@ -281,4 +295,3 @@ begin
 end;
 
 end.
-

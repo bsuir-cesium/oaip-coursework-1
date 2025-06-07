@@ -3,11 +3,19 @@
 interface
 
 uses
-  uTypes, uLCG, SysUtils, DateUtils;
+  uTypes, uLCG, SysUtils, DateUtils, Windows;
 
 procedure GenerateTestData(const FileName: string; RecordCount: Integer; var keys: TOccupiedKeys);
 
 implementation
+
+function HighPrecisionSeed: UInt64;
+var
+  Counter: Int64;
+begin
+  QueryPerformanceCounter(Counter);
+  Result := UInt64(Counter) xor (UInt64(GetTickCount) shl 32);
+end;
 
 procedure GenerateTestData(const FileName: string; RecordCount: Integer; var keys: TOccupiedKeys);
 var

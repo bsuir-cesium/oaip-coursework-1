@@ -3,54 +3,46 @@
 interface
 
 uses
-  uTypes;
+  System.SysUtils, uTypes;
 
 type
   TLCG = class
   private
-    FSeed: Int64; // ������� �������� ����������
-    FA: Int64; // ��������� (a)
-    FM: Int64; // ������ (m)
+    FSeed: UInt64;
+    FA: UInt64;
+    FM: UInt64;
   public
-    constructor Create(A, M, Seed: Int64);
-    function Next: Int64;
+    constructor Create(A, M: UInt64; Seed: UInt64);
+    function Next: UInt64;
     function NextKey: TKey;
   end;
 
 implementation
 
-constructor TLCG.Create(A, M, Seed: Int64);
+constructor TLCG.Create(A, M, Seed: UInt64);
 begin
   FA := A;
   FM := M;
-  FSeed := Seed;
+  FSeed := Seed mod M;
 end;
 
-function TLCG.Next: Int64;
+function TLCG.Next: UInt64;
 begin
   FSeed := (FA * FSeed) mod FM;
   Result := FSeed;
 end;
 
 function TLCG.NextKey: TKey;
+const
+  CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 var
-  Num: Int64;
-  Chars: array [0 .. 5] of Char;
   i: Integer;
 begin
-  Num := Next;
-  for i := 0 to 5 do
+  SetLength(Result, 6);
+  for i := 1 to 6 do
   begin
-    case i mod 2 of
-      0:
-        Chars[i] := Chr(Ord('A') + (Num mod 26));
-      1:
-        Chars[i] := Chr(Ord('0') + (Num mod 10));
-    end;
-    Num := Num div 10;
+    Result[i] := AnsiChar(CHARS[1 + (Next mod 62)]);
   end;
-  Result := TKey(Chars);
 end;
 
 end.
-

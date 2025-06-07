@@ -45,6 +45,8 @@ type
     procedure cbHashMethodLabChange(Sender: TObject);
     procedure cbBucketsCountChange(Sender: TObject);
     procedure btnSearchClick(Sender: TObject);
+    procedure btnGetRandomKeyClick(Sender: TObject);
+    procedure btnGetBucketClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -107,6 +109,8 @@ begin
   btnSearch.Enabled := True;
   btnGetBucket.Enabled := True;
   btnGetRandomKey.Enabled := True;
+  edKey.Enabled := True;
+  edBucket.Enabled := True;
   ShowMessage('Table was succesfully created.');
 end;
 
@@ -129,27 +133,72 @@ begin
     btnCreateTable.Enabled := True;
 end;
 
+procedure TfrmMain.btnGetBucketClick(Sender: TObject);
+var
+  Index, I: Integer;
+  Bucket: uTypes.TBucket;
+  item: TListItem;
+  TempNode: uTypes.PChainNode;
+begin
+  if not TryStrToInt(edBucket.Text, Index) then
+  begin
+    ShowMessage('Not a valid number.');
+    Exit;
+  end;
+  if not HashTableLab.GetBucket(Index - 1, Bucket) then
+  begin
+    ShowMessage('Bucket is not found.');
+    Exit;
+  end;
+  lvBucket.Items.Clear;
+  for I := Low(Bucket.Data) to High(Bucket.Data) do
+  begin
+    item := lvBucket.Items.Add;
+    item.Caption := Bucket.Data[I].Key;
+    item.SubItems.Add(Bucket.Data[I].Name);
+    item.SubItems.Add(IntToStr(Bucket.Data[I].Value));
+  end;
+
+  TempNode := Bucket.Overflow;
+  while TempNode <> nil do
+  begin
+    item := lvBucket.Items.Add;
+    item.Caption := TempNode^.Data.Key;
+    item.SubItems.Add(TempNode^.Data.Name);
+    item.SubItems.Add(IntToStr(TempNode^.Data.Value));
+    TempNode := TempNode^.Next;
+  end;
+end;
+
+procedure TfrmMain.btnGetRandomKeyClick(Sender: TObject);
+var
+  I: UInt32;
+begin
+  I := Random(1_000_000);
+  edKey.Text := keys[I];
+end;
+
 procedure TfrmMain.btnSearchClick(Sender: TObject);
 var
   key: uTypes.TKey;
-  data: uTypes.TSearchDataRecord;
+  Data: uTypes.TSearchDataRecord;
   item: TListItem;
   isFinded: Boolean;
 begin
   key := uTypes.TKey(edKey.Text);
-  isFinded := HashTableLab.Find(key, data);
+  isFinded := HashTableLab.Find(key, Data);
   if not isFinded then
   begin
     ShowMessage('Record is not find');
     Exit;
   end;
+  lvSearchStat.Items.Clear;
   item := lvSearchStat.Items.Add;
-  with data do
+  with Data do
   begin
     item.Caption := IntToStr(Bucket);
     item.SubItems.Add(FloatToStr(Time));
   end;
-  ShowMessage('Record is not find');
 end;
 
 procedure TfrmMain.btnStartAnalysisClick(Sender: TObject);
@@ -157,10 +206,12 @@ var
   HashTable: THashTable;
   HashFunc: THashFunc;
   I: Integer;
+  item: TListItem;
 begin
   lvStats.Items.Clear;
   isAnalys := True;
   lblStatus.Caption := 'Awaiting...';
+  btnStartAnalysis.Enabled := False;
   lblStatus.Update;
   HashTable := nil;
   if cbHashMethod.Text = 'Shift method' then
@@ -170,20 +221,27 @@ begin
 
   for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
   begin
-    Application.ProcessMessages;
     try
       HashTable := THashTable.Create(HashFunc, uTypes.TABLE_STEPS[I]);
       Statistics[I] := AnalysForTables(HashTable, FilePath, keys);
+      item := lvStats.Items.Add;
+      with Statistics[I] do
+      begin
+        item.Caption := IntToStr(TableSize);
+        item.SubItems.Add(IntToStr(Main));
+        item.SubItems.Add(IntToStr(Collisions));
+      end;
     finally
+      Application.ProcessMessages;
       HashTable.Free;
     end;
   end;
-  for I := Low(Statistics) to High(Statistics) do
-    UpdateStatistic(Statistics[I]);
   tbstCharts.Enabled := True;
   isAnalys := False;
   lblStatus.Caption := 'Done!';
   lblStatus.Update;
+
+  btnStartAnalysis.Enabled := True;
 end;
 
 procedure TfrmMain.UpdateStatistic(const Statistic: TStatistic);
@@ -197,7 +255,6 @@ begin
     item.SubItems.Add(IntToStr(Main));
     item.SubItems.Add(IntToStr(Collisions));
   end;
-  lvStats.Invalidate;
 end;
 
 end.
