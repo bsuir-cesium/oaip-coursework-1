@@ -1,37 +1,43 @@
 object fAnalysis: TfAnalysis
   Left = 0
   Top = 0
-  Width = 1233
-  Height = 705
+  Width = 503
+  Height = 336
   Margins.Left = 6
   Margins.Top = 6
   Margins.Right = 6
   Margins.Bottom = 6
+  Align = alClient
+  Anchors = [akLeft, akTop, akRight]
+  Padding.Left = 10
+  Padding.Top = 10
+  Padding.Right = 10
+  Padding.Bottom = 10
   TabOrder = 0
   PixelsPerInch = 192
   DesignSize = (
-    1233
-    705)
+    503
+    336)
   object lblStatus: TLabel
-    Left = 368
-    Top = 32
-    Width = 500
-    Height = 49
+    Left = 272
+    Top = 0
+    Width = 182
+    Height = 15
     Margins.Left = 6
     Margins.Top = 6
     Margins.Right = 6
     Margins.Bottom = 6
     Alignment = taCenter
-    Anchors = [akLeft, akTop, akRight]
+    Anchors = []
     Caption = 'Here you can check analysis status'
     Layout = tlCenter
   end
   object cbHashMethod: TComboBox
     AlignWithMargins = True
-    Left = 457
-    Top = 128
-    Width = 320
-    Height = 40
+    Left = 0
+    Top = 0
+    Width = 249
+    Height = 23
     Margins.Left = 6
     Margins.Top = 6
     Margins.Right = 6
@@ -43,39 +49,26 @@ object fAnalysis: TfAnalysis
       'Square method')
   end
   object btnStartAnalysis: TButton
-    Left = 457
-    Top = 208
-    Width = 320
+    Left = 0
+    Top = 35
+    Width = 249
     Height = 81
     Margins.Left = 6
     Margins.Top = 6
     Margins.Right = 6
     Margins.Bottom = 6
-    Anchors = [akLeft, akTop, akRight]
+    Anchors = []
     Caption = 'Start analysis'
     Enabled = False
     TabOrder = 0
     OnClick = btnStartAnalysisClick
   end
-  object lvStats: TListView
-    Left = 368
-    Top = 336
-    Width = 500
-    Height = 300
-    Margins.Left = 6
-    Margins.Top = 6
-    Margins.Right = 6
-    Margins.Bottom = 6
-    Columns = <
-      item
-        Caption = 'Buckets'
-      end
-      item
-        Caption = 'Main'
-      end
-      item
-        Caption = 'Overflow'
-      end>
+  object ListView1: TListView
+    Left = 0
+    Top = 136
+    Width = 497
+    Height = 199
+    Columns = <>
     TabOrder = 2
   end
 end

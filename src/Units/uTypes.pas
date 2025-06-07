@@ -31,6 +31,11 @@ type
     Value: Integer;
   end;
 
+  TSearchDataRecord = record
+    Bucket: UInt32;
+    Time: Double;
+  end;
+
   PChainNode = ^TChainNode;
 
   TChainNode = record

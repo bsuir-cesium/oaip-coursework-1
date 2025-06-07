@@ -128,7 +128,6 @@
         </DelphiCompile>
         <DCCReference Include="Forms\MainForm.pas">
             <Form>frmMain</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Units\uHashTable.pas"/>
         <DCCReference Include="Units\uTypes.pas"/>
@@ -139,8 +138,7 @@
         <DCCReference Include="Units\uAnalysis.pas"/>
         <DCCReference Include="Forms\uAnalysisFrame.pas">
             <Form>fAnalysis</Form>
-            <FormType>dfm</FormType>
-            <DesignClass>TFrame</DesignClass>
+            <DesignClass>TfAnalysis</DesignClass>
         </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

@@ -29,14 +29,12 @@ type
     destructor Destroy; override;
 
     procedure Insert(const Rec: TDataRecord);
-    function Find(const Key: TKey; out Data: TDataRecord): Boolean;
+    function Find(const Key: TKey; out Data: TSearchDataRecord): Boolean;
     procedure Delete(const Key: TKey);
     procedure Clear;
     procedure LoadFromFile(const FileName: string);
     function SearchFromKeys(const Keys: TOccupiedKeys): integer;
-//    procedure SaveToFile(const FileName: string);
 
-    // ����������
     property Count: UInt32 read FCount;
     property Main: UInt32 read FMain;
     property Collisions: UInt32 read FCollisions;
@@ -114,13 +112,15 @@ begin
   Inc(FCount);
 end;
 
-function THashTable.Find(const Key: TKey; out Data: TDataRecord): Boolean;
+function THashTable.Find(const Key: TKey; out Data: TSearchDataRecord): Boolean;
 var
   Index: Integer;
   Bucket: ^TBucket;
   i: Integer;
   TempNode: PChainNode;
+  SearchStart: TDateTime;
 begin
+  SearchStart := Now;
   Index := FHashFunc(Key, FTableSize);
   Bucket := @FBuckets[Index];
 
@@ -128,7 +128,8 @@ begin
   begin
     if Bucket^.Data[i].Key = Key then
     begin
-      Data := Bucket^.Data[i];
+      Data.Bucket := i + 1;
+      Data.Time := (Now - SearchStart) * 86400;
       Exit(True);
     end;
   end;
@@ -138,7 +139,8 @@ begin
   begin
     if TempNode^.Data.Key = Key then
     begin
-      Data := TempNode^.Data;
+      Data.Bucket := i + 1;
+      Data.Time := (Now - SearchStart) * 86400;
       Exit(True);
     end;
     TempNode := TempNode^.Next;
@@ -222,7 +224,6 @@ begin
 
     while not EOF(F) do
     begin
-      Application.ProcessMessages;
       Read(F, Rec);
       Insert(Rec);
     end;
@@ -235,14 +236,13 @@ end;
 
 function THashTable.SearchFromKeys(const Keys: TOccupiedKeys): Integer;
 var
-  Data: TDataRecord;
+  Data: TSearchDataRecord;
   I, Finded: Integer;
 begin
   Finded := 0;
   FSearchStart := Now;
   for i := low(keys) to high(keys) do
   begin
-    Application.ProcessMessages;
     if Find(keys[i], data) then
       Inc(finded);
   end;
