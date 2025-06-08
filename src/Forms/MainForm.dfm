@@ -3,8 +3,8 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'HashShiftSquare'
-  ClientHeight = 391
-  ClientWidth = 492
+  ClientHeight = 361
+  ClientWidth = 484
   Color = clBtnFace
   Constraints.MinHeight = 420
   Constraints.MinWidth = 500
@@ -21,8 +21,8 @@ object frmMain: TfrmMain
   object lblStart: TLabel
     Left = 0
     Top = 0
-    Width = 492
-    Height = 391
+    Width = 484
+    Height = 361
     Align = alClient
     Alignment = taCenter
     Caption = 'You need to select the file'#13#10'or generate a new one.'
@@ -40,9 +40,9 @@ object frmMain: TfrmMain
     AlignWithMargins = True
     Left = 3
     Top = 3
-    Width = 486
-    Height = 385
-    ActivePage = tbstAnalysis
+    Width = 478
+    Height = 355
+    ActivePage = tbstLaboratory
     Align = alClient
     Anchors = [akLeft, akTop, akRight]
     Style = tsButtons
@@ -51,18 +51,19 @@ object frmMain: TfrmMain
     object tbstAnalysis: TTabSheet
       Caption = 'Analysis'
       DesignSize = (
-        478
-        351)
+        470
+        321)
       object lblStatus: TLabel
         Left = 312
         Top = 0
-        Width = 159
+        Width = 151
         Height = 47
         Alignment = taCenter
         Anchors = [akLeft, akTop, akRight]
         AutoSize = False
         Caption = 'Here you can see'#13#10'inforamtional messages'
         Layout = tlCenter
+        ExplicitWidth = 159
       end
       object btnStartAnalysis: TButton
         Left = 0
@@ -76,8 +77,8 @@ object frmMain: TfrmMain
       object lvStats: TListView
         Left = 0
         Top = 53
-        Width = 471
-        Height = 295
+        Width = 463
+        Height = 265
         Anchors = [akLeft, akTop, akRight, akBottom]
         Color = clBtnFace
         Columns = <
@@ -103,6 +104,8 @@ object frmMain: TfrmMain
         ShowHint = False
         TabOrder = 1
         ViewStyle = vsReport
+        ExplicitWidth = 471
+        ExplicitHeight = 295
       end
       object btnGetCharts: TButton
         Left = 167
@@ -119,8 +122,8 @@ object frmMain: TfrmMain
       Caption = 'Laboratory'
       ImageIndex = 2
       DesignSize = (
-        478
-        351)
+        470
+        321)
       object lblRecordsName: TLabel
         Left = 0
         Top = 125
@@ -155,7 +158,7 @@ object frmMain: TfrmMain
         Left = 247
         Top = 104
         Width = 220
-        Height = 249
+        Height = 219
         Anchors = [akLeft, akTop, akBottom]
         Columns = <
           item
@@ -253,7 +256,11 @@ object frmMain: TfrmMain
           end
           item
             AutoSize = True
-            Caption = 'S. Time'
+            Caption = 'Name'
+          end
+          item
+            AutoSize = True
+            Caption = 'Value'
           end>
         Constraints.MinHeight = 48
         Constraints.MinWidth = 220

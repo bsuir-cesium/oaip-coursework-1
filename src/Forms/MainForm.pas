@@ -7,7 +7,7 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.Menus, uFiles, uTypes,
   uDataGenerator,
-  Vcl.StdCtrls, uAnalysis, uHash, uHashTable, ufCharts;
+  Vcl.StdCtrls, uAnalysis, uHash, uHashTable, ufCharts, Math;
 
 type
   TfrmMain = class(TForm)
@@ -47,6 +47,7 @@ type
     procedure btnGetRandomKeyClick(Sender: TObject);
     procedure btnGetBucketClick(Sender: TObject);
     procedure btnGetChartsClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }
   public
@@ -61,6 +62,15 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TfrmMain.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  if Assigned(HashTableLab) then
+    FreeAndNil(HashTableLab);
+  if keys <> nil then
+    Keys := nil;
+  Action := caFree
+end;
 
 procedure TfrmMain.subItemOpenFileClick(Sender: TObject);
 begin
@@ -151,14 +161,14 @@ begin
     Exit;
   end;
   lvBucket.Items.Clear;
-  i := 0;
-  while i < Bucket.len do
+  I := 0;
+  while I < Bucket.len do
   begin
     item := lvBucket.Items.Add;
     item.Caption := Bucket.Data[I].Key;
     item.SubItems.Add(Bucket.Data[I].Name);
     item.SubItems.Add(IntToStr(Bucket.Data[I].Value));
-    Inc(i);
+    Inc(I);
   end;
 
   TempNode := Bucket.Overflow;
@@ -189,13 +199,13 @@ end;
 
 procedure TfrmMain.btnSearchClick(Sender: TObject);
 var
-  key: uTypes.TKey;
+  Key: uTypes.TKey;
   Data: uTypes.TSearchDataRecord;
   item: TListItem;
   isFinded: Boolean;
 begin
-  key := uTypes.TKey(edKey.Text);
-  isFinded := HashTableLab.Find(key, Data);
+  Key := uTypes.TKey(edKey.Text);
+  isFinded := HashTableLab.Find(Key, Data);
   if not isFinded then
   begin
     ShowMessage('Record is not find');
@@ -204,15 +214,16 @@ begin
   lvSearchStat.Items.Clear;
   item := lvSearchStat.Items.Add;
   item.Caption := IntToStr(Data.Bucket);
-  item.SubItems.Add(FloatToStr(Data.Time));
-
+  item.SubItems.Add(Data.Name);
+  item.SubItems.Add(IntToStr(Data.Value));
 end;
 
 procedure TfrmMain.btnStartAnalysisClick(Sender: TObject);
 var
   HashTable: THashTable;
   HashFunc: THashFunc;
-  I: Integer;
+  I, step: Integer;
+  percentage: Real;
   item: TListItem;
 begin
   lvStats.Items.Clear;
@@ -222,7 +233,7 @@ begin
   btnGetCharts.Enabled := False;
   lblStatus.Update;
   HashTable := nil;
-
+  step := 0;
   for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
   begin
     try
@@ -236,10 +247,17 @@ begin
         item.SubItems.Add(IntToStr(Main));
         item.SubItems.Add(IntToStr(Collisions));
       end;
+      Inc(step);
+      percentage := step / 0.74;
+      lblStatus.Caption := 'Progress: ' + FloatToStr(percentage) + '%';
+      lblStatus.Update;
     finally
       Application.ProcessMessages;
       HashTable.Free;
     end;
+  end;
+  for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
+  begin
     try
       HashTable := THashTable.Create(uHash.ShiftHash, uTypes.TABLE_STEPS[I]);
       StatisticsShift[I] := AnalysForTables(HashTable, FilePath, keys);
@@ -251,6 +269,11 @@ begin
         item.SubItems.Add(IntToStr(Main));
         item.SubItems.Add(IntToStr(Collisions));
       end;
+      Inc(step);
+      percentage := step / 0.74;
+      lblStatus.Caption := 'Progress: ' +
+        FloatToStr(RoundTo(percentage, -2)) + '%';
+      lblStatus.Update;
     finally
       Application.ProcessMessages;
       HashTable.Free;
@@ -262,6 +285,7 @@ begin
 
   btnStartAnalysis.Enabled := True;
   btnGetCharts.Enabled := True;
+  ShowMessage('Analysis is done.');
 end;
 
 procedure TfrmMain.UpdateStatistic(const Statistic: TStatistic);

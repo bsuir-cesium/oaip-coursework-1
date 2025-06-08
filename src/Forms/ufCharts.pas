@@ -44,16 +44,16 @@ begin
   chrtShiftBuckets.ClearChart;
   chrtShiftSearch.ClearChart;
 
-  AddCombinedSeries(chrtSquareBuckets, StatisticsSquare, 'Square method',
+  AddCombinedSeries(chrtSquareBuckets, StatisticsSquare, 'Distribution of records from number of buckets',
     clBlue, clRed);
 
   AddTimeSeries(chrtSquareSearch, StatisticsSquare,
-    'Search time (Square)', clGreen);
+    'Search time from number of buckets', clGreen);
 
-  AddCombinedSeries(chrtShiftBuckets, StatisticsShift, 'Shift method', clNavy,
+  AddCombinedSeries(chrtShiftBuckets, StatisticsShift, 'Distribution of records from number of buckets', clNavy,
     clPurple);
 
-  AddTimeSeries(chrtShiftSearch, StatisticsShift, 'Search time (Shift)',
+  AddTimeSeries(chrtShiftSearch, StatisticsShift, 'Search time from number of buckets',
     clMaroon);
 end;
 
