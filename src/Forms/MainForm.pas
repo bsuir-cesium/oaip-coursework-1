@@ -7,7 +7,7 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.Menus, uFiles, uTypes,
   uDataGenerator,
-  Vcl.StdCtrls, uAnalysis, uHash, uHashTable, ufCharts, Math;
+  Vcl.StdCtrls, uAnalysis, uHash, uHashTable, ufCharts, Math, Vcl.ExtCtrls;
 
 type
   TfrmMain = class(TForm)
@@ -36,6 +36,10 @@ type
     btnGetBucket: TButton;
     btnGetRandomKey: TButton;
     btnGetCharts: TButton;
+    pnlAnalysisTop: TPanel;
+    pnlLabLeft: TPanel;
+    pnlLabRight: TPanel;
+    spltLab: TSplitter;
     procedure subItemOpenFileClick(Sender: TObject);
     procedure subItemGenerateFileClick(Sender: TObject);
     procedure btnStartAnalysisClick(Sender: TObject);
@@ -106,7 +110,6 @@ procedure TfrmMain.btnCreateTableClick(Sender: TObject);
 var
   TableSize: UInt32;
   HashFunc: THashFunc;
-  I: Integer;
 begin
   if cbHashMethodLab.Text = 'Shift metod' then
     HashFunc := uHash.ShiftHash
@@ -145,7 +148,8 @@ end;
 
 procedure TfrmMain.btnGetBucketClick(Sender: TObject);
 var
-  Index, I: Integer;
+  I: UInt32;
+  Index: Integer;
   Bucket: uTypes.TBucket;
   item: TListItem;
   TempNode: uTypes.PChainNode;
@@ -221,7 +225,6 @@ end;
 procedure TfrmMain.btnStartAnalysisClick(Sender: TObject);
 var
   HashTable: THashTable;
-  HashFunc: THashFunc;
   I, step: Integer;
   percentage: Real;
   item: TListItem;
