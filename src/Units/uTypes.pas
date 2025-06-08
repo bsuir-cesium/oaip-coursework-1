@@ -65,7 +65,7 @@ type
 var
   keys: TOccupiedKeys;
   FilePath: String;
-  Statistics: TStatistics;
+  StatisticsSquare, StatisticsShift: TStatistics;
 
 implementation
 

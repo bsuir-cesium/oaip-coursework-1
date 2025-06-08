@@ -2,133 +2,89 @@ object frmMain: TfrmMain
   AlignWithMargins = True
   Left = 0
   Top = 0
-  Margins.Left = 6
-  Margins.Top = 6
-  Margins.Right = 6
-  Margins.Bottom = 6
-  Align = alClient
-  Anchors = [akLeft, akTop, akRight]
   Caption = 'HashShiftSquare'
-  ClientHeight = 730
-  ClientWidth = 974
+  ClientHeight = 391
+  ClientWidth = 492
   Color = clBtnFace
-  Constraints.MinHeight = 840
-  Constraints.MinWidth = 1000
+  Constraints.MinHeight = 420
+  Constraints.MinWidth = 500
   Font.Charset = RUSSIAN_CHARSET
   Font.Color = clWindowText
-  Font.Height = -24
+  Font.Height = -12
   Font.Name = 'JetBrains Mono'
   Font.Style = []
   Menu = MainMenu
-  Position = poDesktopCenter
-  PixelsPerInch = 192
-  TextHeight = 31
+  Position = poDefault
+  PrintScale = poNone
+  Scaled = False
+  TextHeight = 16
   object lblStart: TLabel
     Left = 0
     Top = 0
-    Width = 974
-    Height = 730
-    Margins.Left = 6
-    Margins.Top = 6
-    Margins.Right = 6
-    Margins.Bottom = 6
+    Width = 492
+    Height = 391
     Align = alClient
     Alignment = taCenter
     Caption = 'You need to select the file'#13#10'or generate a new one.'
     Font.Charset = RUSSIAN_CHARSET
     Font.Color = clSilver
-    Font.Height = -28
+    Font.Height = -14
     Font.Name = 'JetBrains Mono Medium'
     Font.Style = [fsBold, fsItalic]
     ParentFont = False
     Layout = tlCenter
-    ExplicitWidth = 486
-    ExplicitHeight = 74
+    ExplicitWidth = 243
+    ExplicitHeight = 36
   end
   object pgclMain: TPageControl
     AlignWithMargins = True
-    Left = 6
-    Top = 6
-    Width = 962
-    Height = 718
-    Margins.Left = 6
-    Margins.Top = 6
-    Margins.Right = 6
-    Margins.Bottom = 6
-    ActivePage = tbstCharts
+    Left = 3
+    Top = 3
+    Width = 486
+    Height = 385
+    ActivePage = tbstAnalysis
     Align = alClient
     Anchors = [akLeft, akTop, akRight]
     Style = tsButtons
     TabOrder = 0
     Visible = False
     object tbstAnalysis: TTabSheet
-      Margins.Left = 6
-      Margins.Top = 6
-      Margins.Right = 6
-      Margins.Bottom = 6
       Caption = 'Analysis'
       DesignSize = (
-        954
-        669)
+        478
+        351)
       object lblStatus: TLabel
-        Left = 343
-        Top = 2
-        Width = 604
-        Height = 178
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Left = 312
+        Top = 0
+        Width = 159
+        Height = 47
         Alignment = taCenter
-        Anchors = []
+        Anchors = [akLeft, akTop, akRight]
         AutoSize = False
         Caption = 'Here you can see'#13#10'inforamtional messages'
         Layout = tlCenter
-        ExplicitLeft = 334
-        ExplicitTop = -2
-      end
-      object cbHashMethod: TComboBox
-        Left = 0
-        Top = 0
-        Width = 322
-        Height = 39
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
-        TabOrder = 0
-        Text = 'Select a hash metod'
-        OnChange = cbHashMethodChange
-        Items.Strings = (
-          'Shift method'
-          'Square method')
       end
       object btnStartAnalysis: TButton
         Left = 0
-        Top = 74
-        Width = 322
-        Height = 88
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
-        Caption = 'btnStartAnalysis'
-        Enabled = False
-        TabOrder = 1
+        Top = 3
+        Width = 161
+        Height = 44
+        Caption = 'Start analysis'
+        TabOrder = 0
         OnClick = btnStartAnalysisClick
       end
       object lvStats: TListView
         Left = 0
-        Top = 190
-        Width = 948
-        Height = 475
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Top = 53
+        Width = 471
+        Height = 295
         Anchors = [akLeft, akTop, akRight, akBottom]
         Color = clBtnFace
         Columns = <
+          item
+            AutoSize = True
+            Caption = 'Method'
+          end
           item
             AutoSize = True
             Caption = 'Buckets'
@@ -145,73 +101,62 @@ object frmMain: TfrmMain
         RowSelect = True
         ParentShowHint = False
         ShowHint = False
-        TabOrder = 2
+        TabOrder = 1
         ViewStyle = vsReport
       end
-    end
-    object tbstCharts: TTabSheet
-      Margins.Left = 6
-      Margins.Top = 6
-      Margins.Right = 6
-      Margins.Bottom = 6
-      Caption = 'Charts'
-      Enabled = False
-      ImageIndex = 1
+      object btnGetCharts: TButton
+        Left = 167
+        Top = 3
+        Width = 139
+        Height = 44
+        Caption = 'Get charts'
+        Enabled = False
+        TabOrder = 2
+        OnClick = btnGetChartsClick
+      end
     end
     object tbstLaboratory: TTabSheet
-      Margins.Left = 6
-      Margins.Top = 6
-      Margins.Right = 6
-      Margins.Bottom = 6
       Caption = 'Laboratory'
       ImageIndex = 2
+      DesignSize = (
+        478
+        351)
       object lblRecordsName: TLabel
         Left = 0
-        Top = 250
-        Width = 440
-        Height = 32
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Top = 125
+        Width = 220
+        Height = 16
         AutoSize = False
         Caption = 'Record'#39's name'
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False
       end
       object lblBucketsNum: TLabel
-        Left = 494
-        Top = 12
-        Width = 440
-        Height = 30
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Left = 247
+        Top = 6
+        Width = 220
+        Height = 15
         AutoSize = False
         Caption = 'Bucket'#39's number'
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False
       end
       object lvBucket: TListView
-        Left = 494
-        Top = 208
-        Width = 440
-        Height = 434
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Left = 247
+        Top = 104
+        Width = 220
+        Height = 249
+        Anchors = [akLeft, akTop, akBottom]
         Columns = <
           item
             AutoSize = True
@@ -225,24 +170,21 @@ object frmMain: TfrmMain
             AutoSize = True
             Caption = 'Value'
           end>
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         GridLines = True
         TabOrder = 0
         ViewStyle = vsReport
       end
       object cbBucketsCount: TComboBox
         Left = 0
-        Top = 80
-        Width = 440
-        Height = 39
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
-        Constraints.MinWidth = 440
+        Top = 40
+        Width = 220
+        Height = 24
+        Margins.Bottom = 10
+        Constraints.MinWidth = 220
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False
@@ -252,17 +194,14 @@ object frmMain: TfrmMain
       end
       object cbHashMethodLab: TComboBox
         Left = 0
-        Top = 6
-        Width = 440
-        Height = 39
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
-        Constraints.MinWidth = 440
+        Top = 3
+        Width = 220
+        Height = 24
+        Margins.Bottom = 10
+        Constraints.MinWidth = 220
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False
@@ -275,19 +214,16 @@ object frmMain: TfrmMain
       end
       object btnCreateTable: TButton
         Left = 0
-        Top = 154
-        Width = 440
-        Height = 70
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
+        Top = 77
+        Width = 220
+        Height = 35
+        Margins.Bottom = 10
         Caption = 'Create table'
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         Enabled = False
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False
@@ -296,27 +232,20 @@ object frmMain: TfrmMain
       end
       object edKey: TEdit
         Left = 0
-        Top = 294
-        Width = 440
-        Height = 39
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
-        Constraints.MinWidth = 440
+        Top = 147
+        Width = 220
+        Height = 24
+        Margins.Bottom = 10
+        Constraints.MinWidth = 220
         Enabled = False
         TabOrder = 4
         Text = 'Ex A1B2C3'
       end
       object lvSearchStat: TListView
         Left = 0
-        Top = 558
-        Width = 440
-        Height = 96
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Top = 279
+        Width = 220
+        Height = 48
         Columns = <
           item
             AutoSize = True
@@ -326,11 +255,11 @@ object frmMain: TfrmMain
             AutoSize = True
             Caption = 'S. Time'
           end>
-        Constraints.MinHeight = 96
-        Constraints.MinWidth = 440
+        Constraints.MinHeight = 48
+        Constraints.MinWidth = 220
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         GridLines = True
@@ -340,48 +269,38 @@ object frmMain: TfrmMain
       end
       object btnSearch: TButton
         Left = 0
-        Top = 462
-        Width = 440
-        Height = 70
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
+        Top = 231
+        Width = 220
+        Height = 35
+        Margins.Bottom = 10
         Caption = 'Find record'
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         Enabled = False
         TabOrder = 6
         OnClick = btnSearchClick
       end
       object edBucket: TEdit
-        Left = 494
-        Top = 54
-        Width = 440
-        Height = 39
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
-        Constraints.MinWidth = 440
+        Left = 247
+        Top = 27
+        Width = 220
+        Height = 24
+        Margins.Bottom = 10
+        Constraints.MinWidth = 220
         Enabled = False
         TabOrder = 7
         Text = 'Ex 8'
       end
       object btnGetBucket: TButton
-        Left = 494
-        Top = 126
-        Width = 440
-        Height = 70
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 6
+        Left = 247
+        Top = 63
+        Width = 220
+        Height = 35
         Caption = 'Get bucket'
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         Enabled = False
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False
@@ -390,19 +309,16 @@ object frmMain: TfrmMain
       end
       object btnGetRandomKey: TButton
         Left = 0
-        Top = 366
-        Width = 440
-        Height = 70
-        Margins.Left = 6
-        Margins.Top = 6
-        Margins.Right = 6
-        Margins.Bottom = 20
+        Top = 183
+        Width = 220
+        Height = 35
+        Margins.Bottom = 10
         Caption = 'Get random key'
-        Constraints.MinWidth = 440
+        Constraints.MinWidth = 220
         Enabled = False
         Font.Charset = RUSSIAN_CHARSET
         Font.Color = clWindowText
-        Font.Height = -24
+        Font.Height = -12
         Font.Name = 'JetBrains Mono'
         Font.Style = []
         ParentFont = False

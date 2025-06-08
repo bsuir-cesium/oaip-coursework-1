@@ -129,7 +129,7 @@ begin
     if Bucket^.Data[i].Key = Key then
     begin
       Data.Bucket := Index + 1;
-      Data.Time := (Now - SearchStart) * 86400;
+      Data.Time := (Now - SearchStart) * 86400 * 1000;
       Exit(True);
     end;
   end;
@@ -140,7 +140,7 @@ begin
     if TempNode^.Data.Key = Key then
     begin
       Data.Bucket := Index + 1;
-      Data.Time := (Now - SearchStart) * 86400;
+      Data.Time := (Now - SearchStart) * 86400 * 1000;
       Exit(True);
     end;
     TempNode := TempNode^.Next;

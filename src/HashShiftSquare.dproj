@@ -136,9 +136,9 @@
         <DCCReference Include="Units\uFiles.pas"/>
         <DCCReference Include="Units\uHash.pas"/>
         <DCCReference Include="Units\uAnalysis.pas"/>
-        <DCCReference Include="Forms\uAnalysisFrame.pas">
-            <Form>fAnalysis</Form>
-            <DesignClass>TfAnalysis</DesignClass>
+        <DCCReference Include="Forms\ufCharts.pas">
+            <Form>Charts</Form>
+            <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

@@ -7,20 +7,18 @@ uses
   System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.Menus, uFiles, uTypes,
   uDataGenerator,
-  Vcl.StdCtrls, uAnalysisFrame, uAnalysis, uHash, uHashTable;
+  Vcl.StdCtrls, uAnalysis, uHash, uHashTable, ufCharts;
 
 type
   TfrmMain = class(TForm)
     pgclMain: TPageControl;
     tbstAnalysis: TTabSheet;
-    tbstCharts: TTabSheet;
     MainMenu: TMainMenu;
     itemFile: TMenuItem;
     OpenDialog: TOpenDialog;
     subItemOpenFile: TMenuItem;
     subItemGenerateFile: TMenuItem;
     lblStart: TLabel;
-    cbHashMethod: TComboBox;
     btnStartAnalysis: TButton;
     lvStats: TListView;
     lblStatus: TLabel;
@@ -37,6 +35,7 @@ type
     edBucket: TEdit;
     btnGetBucket: TButton;
     btnGetRandomKey: TButton;
+    btnGetCharts: TButton;
     procedure subItemOpenFileClick(Sender: TObject);
     procedure subItemGenerateFileClick(Sender: TObject);
     procedure btnStartAnalysisClick(Sender: TObject);
@@ -47,6 +46,7 @@ type
     procedure btnSearchClick(Sender: TObject);
     procedure btnGetRandomKeyClick(Sender: TObject);
     procedure btnGetBucketClick(Sender: TObject);
+    procedure btnGetChartsClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -151,12 +151,14 @@ begin
     Exit;
   end;
   lvBucket.Items.Clear;
-  for I := Low(Bucket.Data) to High(Bucket.Data) do
+  i := 0;
+  while i < Bucket.len do
   begin
     item := lvBucket.Items.Add;
     item.Caption := Bucket.Data[I].Key;
     item.SubItems.Add(Bucket.Data[I].Name);
     item.SubItems.Add(IntToStr(Bucket.Data[I].Value));
+    Inc(i);
   end;
 
   TempNode := Bucket.Overflow;
@@ -168,6 +170,13 @@ begin
     item.SubItems.Add(IntToStr(TempNode^.Data.Value));
     TempNode := TempNode^.Next;
   end;
+end;
+
+procedure TfrmMain.btnGetChartsClick(Sender: TObject);
+begin
+  charts := TCharts.Create(Application);
+  charts.AddSeries(uTypes.StatisticsSquare, uTypes.StatisticsShift);
+  charts.Show;
 end;
 
 procedure TfrmMain.btnGetRandomKeyClick(Sender: TObject);
@@ -194,11 +203,9 @@ begin
   end;
   lvSearchStat.Items.Clear;
   item := lvSearchStat.Items.Add;
-  with Data do
-  begin
-    item.Caption := IntToStr(Bucket);
-    item.SubItems.Add(FloatToStr(Time));
-  end;
+  item.Caption := IntToStr(Data.Bucket);
+  item.SubItems.Add(FloatToStr(Data.Time));
+
 end;
 
 procedure TfrmMain.btnStartAnalysisClick(Sender: TObject);
@@ -212,22 +219,35 @@ begin
   isAnalys := True;
   lblStatus.Caption := 'Awaiting...';
   btnStartAnalysis.Enabled := False;
+  btnGetCharts.Enabled := False;
   lblStatus.Update;
   HashTable := nil;
-  if cbHashMethod.Text = 'Shift method' then
-    HashFunc := uHash.ShiftHash
-  else
-    HashFunc := uHash.SquareHash;
 
   for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
   begin
     try
-      HashTable := THashTable.Create(HashFunc, uTypes.TABLE_STEPS[I]);
-      Statistics[I] := AnalysForTables(HashTable, FilePath, keys);
+      HashTable := THashTable.Create(uHash.SquareHash, uTypes.TABLE_STEPS[I]);
+      StatisticsSquare[I] := AnalysForTables(HashTable, FilePath, keys);
       item := lvStats.Items.Add;
-      with Statistics[I] do
+      with StatisticsSquare[I] do
       begin
-        item.Caption := IntToStr(TableSize);
+        item.Caption := 'Square';
+        item.SubItems.Add(IntToStr(TableSize));
+        item.SubItems.Add(IntToStr(Main));
+        item.SubItems.Add(IntToStr(Collisions));
+      end;
+    finally
+      Application.ProcessMessages;
+      HashTable.Free;
+    end;
+    try
+      HashTable := THashTable.Create(uHash.ShiftHash, uTypes.TABLE_STEPS[I]);
+      StatisticsShift[I] := AnalysForTables(HashTable, FilePath, keys);
+      item := lvStats.Items.Add;
+      with StatisticsShift[I] do
+      begin
+        item.Caption := 'Shift';
+        item.SubItems.Add(IntToStr(TableSize));
         item.SubItems.Add(IntToStr(Main));
         item.SubItems.Add(IntToStr(Collisions));
       end;
@@ -236,12 +256,12 @@ begin
       HashTable.Free;
     end;
   end;
-  tbstCharts.Enabled := True;
   isAnalys := False;
   lblStatus.Caption := 'Done!';
   lblStatus.Update;
 
   btnStartAnalysis.Enabled := True;
+  btnGetCharts.Enabled := True;
 end;
 
 procedure TfrmMain.UpdateStatistic(const Statistic: TStatistic);

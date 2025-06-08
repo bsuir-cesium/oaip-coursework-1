@@ -14,7 +14,7 @@ uses
   uAnalysis in 'Units\uAnalysis.pas',
   Vcl.Themes,
   Vcl.Styles,
-  uAnalysisFrame in 'Forms\uAnalysisFrame.pas' {fAnalysis: TfAnalysis};
+  ufCharts in 'Forms\ufCharts.pas' {Charts};
 
 {$R *.res}
 
@@ -30,6 +30,7 @@ begin
   Application.MainFormOnTaskbar := True;
   TStyleManager.TrySetStyle('Tablet Dark');
   Application.CreateForm(TfrmMain, frmMain);
+  Application.CreateForm(TCharts, Charts);
   for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
      MainForm.frmMain.cbBucketsCount.Items.Add(IntToStr(uTypes.TABLE_STEPS[I]));
   Application.Run;
