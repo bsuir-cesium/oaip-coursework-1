@@ -17,10 +17,8 @@ type
     FCount: UInt32;
     FMain: UInt32;
     FCollisions: UInt32;
-
     FInsertStart: TDateTime;
     FInsertTime: Double;
-
     FSearchStart: TDateTime;
     FSearchTime: Double;
 
@@ -119,9 +117,7 @@ var
   Bucket: ^TBucket;
   i: Integer;
   TempNode: PChainNode;
-  SearchStart: TDateTime;
 begin
-  SearchStart := Now;
   Index := FHashFunc(Key, FTableSize);
   Bucket := @FBuckets[Index];
   for i := 0 to Bucket^.Len - 1 do
@@ -141,8 +137,8 @@ begin
     if TempNode^.Data.Key = Key then
     begin
       Data.Bucket := Index + 1;
-      Data.Name := Bucket^.Data[i].Name;
-      Data.Value := Bucket^.Data[i].Value;
+      Data.Name := TempNode^.Data.Name;
+      Data.Value := TempNode^.Data.Value;
       Exit(True);
     end;
     TempNode := TempNode^.Next;
@@ -230,9 +226,7 @@ procedure THashTable.LoadFromFile(const FileName: string);
 var
   F: File of TDataRecord;
   Rec: TDataRecord;
-  I: UInt32;
 begin
-  I := 0;
   FInsertStart := Now;
   try
     AssignFile(F, FileName);

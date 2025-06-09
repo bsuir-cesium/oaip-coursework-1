@@ -1,0 +1,1087 @@
+Модуль uAnalysis.pas
+
+unit uAnalysis;
+
+interface
+
+uses
+  uTypes, uHashTable;
+
+function AnalysForTables(var HashTable: THashTable; FileName: String;
+  const keys: TOccupiedKeys): TStatistic;
+
+implementation
+
+function AnalysForTables(var HashTable: THashTable; FileName: String;
+  const keys: TOccupiedKeys): TStatistic;
+var
+  data: TStatistic;
+begin
+  HashTable.LoadFromFile(FileName);
+  HashTable.SearchFromKeys(keys);
+  with data do
+  begin
+    TableSize := HashTable.TableSize;
+    BucketSize := HashTable.BucketSize;
+    Main := HashTable.Main;
+    Collisions := HashTable.Collisions;
+    InsertTime := HashTable.InsertTime;
+    SearchTime := HashTable.SearchTime;
+  end;
+
+  result := data;
+end;
+
+end.
+
+Модуль uDataGenerator.pas
+unit uDataGenerator;
+
+interface
+
+uses
+  uTypes, uLCG, SysUtils, DateUtils, Windows;
+
+procedure GenerateTestData(const FileName: string; RecordCount: Integer; var keys: TOccupiedKeys);
+
+implementation
+
+function HighPrecisionSeed: UInt64;
+var
+  Counter: Int64;
+begin
+  QueryPerformanceCounter(Counter);
+  Result := UInt64(Counter) xor (UInt64(GetTickCount) shl 32);
+end;
+
+procedure GenerateTestData(const FileName: string; RecordCount: Integer; var keys: TOccupiedKeys);
+var
+  LCG: TLCG;
+  F: File of TDataRecord;
+  i: Integer;
+  Rec: TDataRecord;
+begin
+  LCG := TLCG.Create(1103515245, 2147483648, DateTimeToUnix(Now));
+
+  try
+    AssignFile(F, FileName);
+    Rewrite(F);
+
+    for i := 1 to RecordCount do
+    begin
+      Rec.Key := LCG.NextKey;
+      keys[i-1] := Rec.Key;
+      Rec.Name := TName('Info_' + IntToStr(i));
+      Rec.Value := Random(1000);
+      Write(F, Rec);
+    end;
+
+    CloseFile(F);
+  finally
+    LCG.Free;
+  end;
+end;
+
+end.
+
+Модуль uFiles.pas
+unit uFiles;
+
+
+interface
+
+uses
+  uTypes;
+
+procedure ReadKeysFromFile(const FileName: String; var keys: TOccupiedKeys);
+
+implementation
+
+procedure ReadKeysFromFile(const FileName: String; var keys: TOccupiedKeys);
+var
+  F: File of TDataRecord;
+  Rec: TDataRecord;
+  i: Integer;
+begin
+  i := 0;
+  try
+    AssignFile(F, FileName);
+    Reset(F);
+
+    while not EOF(F) do
+    begin
+      Read(F, Rec);
+      keys[i] := Rec.Key;
+      Inc(i);
+    end;
+
+  finally
+    CloseFile(F);
+  end;
+end;
+
+end.
+
+Модуль uHash.pas
+unit uHash;
+
+interface
+
+uses
+  SysUtils, uTypes, math;
+
+const
+  SQUARE_CUT_DIGITS = 3;
+  SQUARE_DIVISOR = 100;
+
+  SHIFT_SPLIT_POS = 3;
+
+function SquareHash(const Key: TKey; TableSize: UInt32): UInt64;
+
+function ShiftHash(const Key: TKey; TableSize: UInt32): UInt64;
+
+implementation
+
+function TKeyToNumber(const Key: TKey): UInt64;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for i := 1 to Length(Key) do
+  begin
+    Result := (Result shl 4) or (Ord(Key[i]) and $0F);
+  end;
+end;
+
+function SquareHash(const Key: TKey; TableSize: UInt32): UInt64;
+var
+  num: UInt64;
+  squareStr: string;
+  midDigitsStr: string;
+  midValue: Int64;
+begin
+  num := TKeyToNumber(Key);
+
+  squareStr := IntToStr(num * num);
+  midDigitsStr := Copy(squareStr, ((Length(squareStr) - 6) div 2) + 1, 6);
+  midValue := StrToInt64(midDigitsStr);
+
+  Result := (midValue * 13) mod TableSize;
+end;
+
+function ShiftHash(const Key: TKey; TableSize: UInt32): UInt64;
+var
+  Num, Temp: UInt64;
+  NumDigits, SplitDigits: Integer;
+  SplitPow: UInt64;
+begin
+  Num := TKeyToNumber(Key);
+
+  SplitDigits := 1;
+  Temp := 10;
+  while Temp <= TableSize do
+  begin
+    Inc(SplitDigits);
+    Temp := Temp * 10;
+  end;
+
+  repeat
+    NumDigits := 0;
+    Temp := Num;
+    while Temp > 0 do
+    begin
+      Inc(NumDigits);
+      Temp := Temp div 10;
+    end;
+
+    if NumDigits <= SplitDigits then Break;
+
+    SplitPow := 1;
+    for var i := 1 to (NumDigits div 2) do
+      SplitPow := SplitPow * 10;
+
+    Temp := Num div SplitPow;
+    Num := Temp + (Num mod SplitPow);
+
+  until False;
+
+  Result := Num mod TableSize;
+end;
+
+end.
+
+Модуль uHashTable
+unit uHashTable;
+
+interface
+
+uses
+  SysUtils, Classes, uTypes, uHash, Vcl.Forms;
+
+type
+
+  THashTable = class
+  private
+
+    FBuckets: array of TBucket;
+    FHashFunc: THashFunc;
+    FTableSize: UInt32;
+    FBucketSize: UInt32;
+    FCount: UInt32;
+    FMain: UInt32;
+    FCollisions: UInt32;
+    FInsertStart: TDateTime;
+    FInsertTime: Double;
+    FSearchStart: TDateTime;
+    FSearchTime: Double;
+
+  public
+    constructor Create(HashFunc: THashFunc; TableSize: Integer);
+    destructor Destroy; override;
+
+    procedure Insert(const Rec: TDataRecord);
+    function Find(const Key: TKey; out Data: TSearchDataRecord): Boolean;
+    function GetBucket(const Index: Integer; out Data: TBucket): Boolean;
+    procedure Delete(const Key: TKey);
+    procedure Clear;
+    procedure LoadFromFile(const FileName: string);
+    function SearchFromKeys(const Keys: TOccupiedKeys): Integer;
+
+    property Count: UInt32 read FCount;
+    property Main: UInt32 read FMain;
+    property Collisions: UInt32 read FCollisions;
+    property InsertTime: Double read FInsertTime;
+    property SearchTime: Double read FSearchTime;
+    property BucketSize: UInt32 read FBucketSize;
+    property TableSize: UInt32 read FTableSize;
+    function LoadFactor: Double;
+  end;
+
+implementation
+
+{ THashTable }
+
+constructor THashTable.Create(HashFunc: THashFunc; TableSize: Integer);
+var
+  i: Integer;
+begin
+  inherited Create;
+  FHashFunc := HashFunc;
+  FTableSize := TableSize;
+  SetLength(FBuckets, FTableSize);
+  FBucketSize := uTypes.RECORDS_MAX_MEMORY div FTableSize;
+
+  for i := 0 to TableSize - 1 do
+  begin
+    SetLength(FBuckets[i].Data, FBucketSize);
+    FBuckets[i].Len := 0;
+    FBuckets[i].Overflow := nil;
+  end;
+
+  FCount := 0;
+  FCollisions := 0;
+end;
+
+destructor THashTable.Destroy;
+begin
+  Clear;
+  inherited;
+end;
+
+procedure THashTable.Insert(const Rec: TDataRecord);
+var
+  Index: Integer;
+  Bucket: ^TBucket;
+  Node, Temp: PChainNode;
+begin
+  Index := FHashFunc(Rec.Key, FTableSize);
+  Bucket := @FBuckets[index];
+  if Bucket^.Len < FBucketSize then
+  begin
+    Bucket^.Data[Bucket^.Len] := Rec;
+    Inc(Bucket^.Len);
+    Inc(FMain);
+  end
+  else
+  begin
+    Inc(FCollisions);
+    New(Node);
+    Node^.Data := Rec;
+    Node^.Next := nil;
+
+    if Bucket^.Overflow = nil then
+      Bucket^.Overflow := Node
+    else
+    begin
+      Temp := Bucket^.Overflow;
+      while Temp.Next <> nil do
+        Temp := Temp^.Next;
+      Temp^.Next := Node;
+    end;
+
+  end;
+
+  Inc(FCount);
+end;
+
+function THashTable.Find(const Key: TKey; out Data: TSearchDataRecord): Boolean;
+var
+  Index: Integer;
+  Bucket: ^TBucket;
+  i: Integer;
+  TempNode: PChainNode;
+begin
+  Index := FHashFunc(Key, FTableSize);
+  Bucket := @FBuckets[Index];
+  for i := 0 to Bucket^.Len - 1 do
+  begin
+    if Bucket^.Data[i].Key = Key then
+    begin
+      Data.Bucket := Index + 1;
+      Data.Name := Bucket^.Data[i].Name;
+      Data.Value := Bucket^.Data[i].Value;
+      Exit(True);
+    end;
+  end;
+
+  TempNode := Bucket^.Overflow;
+  while TempNode <> nil do
+  begin
+    if TempNode^.Data.Key = Key then
+    begin
+      Data.Bucket := Index + 1;
+      Data.Name := TempNode^.Data.Name;
+      Data.Value := TempNode^.Data.Value;
+      Exit(True);
+    end;
+    TempNode := TempNode^.Next;
+  end;
+
+  Result := False;
+end;
+
+function THashTable.GetBucket(const Index: Integer; out Data: TBucket): Boolean;
+begin
+  Result := False;
+
+  if (Index < 0) or (Index >= FTableSize) then
+    Exit;
+
+  Data := FBuckets[Index];
+  Result := True;
+
+end;
+
+procedure THashTable.Delete(const Key: TKey);
+var
+  Index: Integer;
+  Bucket: ^TBucket;
+  i: Integer;
+  PrevNode, CurrNode: PChainNode;
+begin
+  Index := FHashFunc(Key, FTableSize);
+  Bucket := @FBuckets[Index];
+
+  for i := 0 to Bucket^.Len - 1 do
+  begin
+    if Bucket^.Data[i].Key = Key then
+    begin
+      System.Delete(Bucket^.Data, i, 1);
+      Dec(Bucket^.Len);
+      Dec(FCount);
+      Exit;
+    end;
+  end;
+
+  PrevNode := nil;
+  CurrNode := Bucket^.Overflow;
+  while CurrNode <> nil do
+  begin
+    if CurrNode^.Data.Key = Key then
+    begin
+      if PrevNode = nil then
+        Bucket^.Overflow := CurrNode^.Next
+      else
+        PrevNode^.Next := CurrNode^.Next;
+      Dispose(CurrNode);
+      Dec(FCount);
+      Exit;
+    end;
+    PrevNode := CurrNode;
+    CurrNode := CurrNode^.Next;
+  end;
+end;
+
+procedure THashTable.Clear;
+var
+  i: Integer;
+  CurrentNode, TempNode: PChainNode;
+begin
+  for i := Low(FBuckets) to High(FBuckets) - 1 do
+  begin
+    CurrentNode := FBuckets[i].Overflow;
+    while CurrentNode <> nil do
+    begin
+      TempNode := CurrentNode;
+      CurrentNode := CurrentNode^.Next;
+      Dispose(TempNode);
+    end;
+    FBuckets[i].Overflow := nil;
+    SetLength(FBuckets[i].Data, 0);
+    FBuckets[i].Len := 0;
+  end;
+  SetLength(FBuckets, 0);
+  FCount := 0;
+  FCollisions := 0;
+end;
+
+procedure THashTable.LoadFromFile(const FileName: string);
+var
+  F: File of TDataRecord;
+  Rec: TDataRecord;
+begin
+  FInsertStart := Now;
+  try
+    AssignFile(F, FileName);
+    Reset(F);
+
+    while not EOF(F) do
+    begin
+      Read(F, Rec);
+      Insert(Rec);
+    end;
+
+  finally
+    CloseFile(F);
+    FInsertTime := (Now - FInsertStart) * 86400;
+  end;
+end;
+
+function THashTable.SearchFromKeys(const Keys: TOccupiedKeys): Integer;
+var
+  Data: TSearchDataRecord;
+  i, Finded: Integer;
+begin
+  Finded := 0;
+  FSearchStart := Now;
+  for i := low(Keys) to high(Keys) do
+  begin
+    if Find(Keys[i], Data) then
+      Inc(Finded);
+  end;
+  FSearchTime := (Now - FSearchStart) * 86400;
+  Result := Finded;
+end;
+
+function THashTable.LoadFactor: Double;
+begin
+  Result := FCount / FTableSize;
+end;
+
+end.
+
+Модуль uLCG.pas
+unit uLCG;
+
+interface
+
+uses
+  System.SysUtils, uTypes;
+
+type
+  TLCG = class
+  private
+    FSeed: UInt64;
+    FA: UInt64;
+    FM: UInt64;
+  public
+    constructor Create(A, M: UInt64; Seed: UInt64);
+    function Next: UInt64;
+    function NextKey: TKey;
+  end;
+
+implementation
+
+constructor TLCG.Create(A, M, Seed: UInt64);
+begin
+  FA := A;
+  FM := M;
+  FSeed := Seed mod M;
+end;
+
+function TLCG.Next: UInt64;
+begin
+  FSeed := (FA * FSeed) mod FM;
+  Result := FSeed;
+end;
+
+function TLCG.NextKey: TKey;
+const
+  CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+var
+  i: Integer;
+begin
+  SetLength(Result, 6);
+  for i := 1 to 6 do
+  begin
+    Result[i] := AnsiChar(CHARS[1 + (Next mod 62)]);
+  end;
+end;
+
+end.
+
+Модуль uTypes.pas
+unit uTypes;
+
+interface
+
+uses
+  SysUtils;
+
+const
+  MAX_TABLE_SIZE = 200000;
+  RECORDS_MAX_MEMORY = 1_200_000;
+  RECORDS_COUNT = 1_000_000;
+  KEY_LENGTH = 6;
+  NAME_LENGTH = 20;
+  TABLE_STEPS: array[1..37] of Integer = (
+    20, 40, 60, 80, 100, 120, 140, 160, 180, 200,
+    400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000,
+    4000, 6000, 8000, 10000, 12000, 14000, 16000, 18000, 20000,
+    40000, 60000, 80000, 100000, 120000, 140000, 160000, 180000, 200000
+  );
+
+type
+  EHashException = class(Exception);
+
+  TKey = string[KEY_LENGTH];
+  TName = string[NAME_LENGTH];
+  TOccupiedKeys = array of TKey;
+
+  TDataRecord = record
+    Key: TKey;
+    Name: TName;
+    Value: Integer;
+  end;
+
+  TSearchDataRecord = record
+    Bucket: UInt32;
+    Name: TName;
+    Value: Integer;
+  end;
+
+  PChainNode = ^TChainNode;
+
+  TChainNode = record
+    Data: TDataRecord;
+    Next: PChainNode;
+  end;
+
+  TBucket = record
+    Data: array of TDataRecord;
+    Len: UInt32;
+    Overflow: PChainNode;
+  end;
+
+  THashFunc = function(const Key: TKey; TableSize: UInt32): UInt64;
+
+  TStatistic = record
+    TableSize: UInt32;
+    BucketSize: UInt32;
+    Main: UInt32;
+    Collisions: UInt32;
+    InsertTime: Double;
+    SearchTime: Double;
+  end;
+
+  TStatistics = array [1..37] of TStatistic;
+
+var
+  keys: TOccupiedKeys;
+  FilePath: String;
+  StatisticsSquare, StatisticsShift: TStatistics;
+
+implementation
+
+end.
+
+Модуль ufCharts.pas
+unit ufCharts;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, VclTee.TeeGDIPlus,
+  VclTee.TeEngine, Vcl.ExtCtrls, VclTee.TeeProcs, VclTee.Chart, VclTee.Series, uTypes;
+
+type
+  TCharts = class(TForm)
+    lblSquareMain: TLabel;
+    chrtSquareBuckets: TChart;
+    chrtSquareSearch: TChart;
+    chrtShiftBuckets: TChart;
+    lblShiftMain: TLabel;
+    chrtShiftSearch: TChart;
+    procedure AddSeries(const StatisticsSquare, StatisticsShift: TStatistics);
+    procedure AddCombinedSeries(Chart: TChart; const Stats: TStatistics;
+  const Title: string; BarColor, LineColor: TColor);
+    procedure AddTimeSeries(Chart: TChart; const Stats: TStatistics;
+  const Title: string; BarColor: TColor);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Charts: TCharts;
+
+implementation
+
+{$R *.dfm}
+
+procedure TCharts.AddSeries(const StatisticsSquare, StatisticsShift
+  : TStatistics);
+var
+  i: Integer;
+begin
+  chrtSquareBuckets.ClearChart;
+  chrtSquareSearch.ClearChart;
+  chrtShiftBuckets.ClearChart;
+  chrtShiftSearch.ClearChart;
+
+  AddCombinedSeries(chrtSquareBuckets, StatisticsSquare, 'Distribution of records from number of buckets',
+    clBlue, clRed);
+
+  AddTimeSeries(chrtSquareSearch, StatisticsSquare,
+    'Search time from number of buckets', clGreen);
+
+  AddCombinedSeries(chrtShiftBuckets, StatisticsShift, 'Distribution of records from number of buckets', clNavy,
+    clPurple);
+
+  AddTimeSeries(chrtShiftSearch, StatisticsShift, 'Search time from number of buckets',
+    clMaroon);
+end;
+
+// ��������������� ������:
+
+procedure TCharts.AddCombinedSeries(Chart: TChart; const Stats: TStatistics;
+  const Title: string; BarColor, LineColor: TColor);
+var
+  BarSeries: TBarSeries;
+  LineSeries: TLineSeries;
+  i: Integer;
+begin
+  Chart.Title.Text.Clear;
+  Chart.Title.Text.Add(Title);
+  Chart.View3D := False;
+  Chart.Legend.Visible := True;
+
+  // ��������� ��� X
+  Chart.Axes.Bottom.LabelStyle := talText; // ���������� ��������� �����
+  Chart.Axes.Bottom.LabelsAngle := 90;    // ������������ ����� �� 90�
+
+  // ���������� ���������
+  BarSeries := TBarSeries.Create(Chart);
+  BarSeries.Title := 'Main';
+  BarSeries.SeriesColor := BarColor;
+  BarSeries.Marks.Visible := False;
+  Chart.AddSeries(BarSeries);
+
+  // �������� ������
+  LineSeries := TLineSeries.Create(Chart);
+  LineSeries.Title := 'Overflow';
+  LineSeries.SeriesColor := LineColor;
+  LineSeries.LinePen.Width := 3;
+  LineSeries.Pointer.Style := psCircle;
+  LineSeries.Pointer.Visible := True;
+  Chart.AddSeries(LineSeries);
+
+  // ��������� ����� � ��������� ������ TableSize
+  for i := Low(Stats) to High(Stats) do
+  begin
+    BarSeries.AddXY(i, Stats[i].Main, IntToStr(Stats[i].TableSize));
+    LineSeries.AddXY(i, Stats[i].Collisions);
+  end;
+end;
+
+procedure TCharts.AddTimeSeries(Chart: TChart; const Stats: TStatistics;
+  const Title: string; BarColor: TColor);
+var
+  BarSeries: TBarSeries;
+  i: Integer;
+begin
+  Chart.Title.Text.Clear;
+  Chart.Title.Text.Add(Title);
+  Chart.View3D := False;
+  Chart.Legend.Visible := False;
+
+  // ��������� ��� X
+  Chart.Axes.Bottom.LabelStyle := talText;
+  Chart.Axes.Bottom.LabelsAngle := 90;
+
+  BarSeries := TBarSeries.Create(Chart);
+  BarSeries.SeriesColor := BarColor;
+  BarSeries.Marks.Visible := True;
+  BarSeries.Marks.Style := smsValue;
+  Chart.AddSeries(BarSeries);
+
+  for i := Low(Stats) to High(Stats) do
+  begin
+    BarSeries.AddXY(i, Stats[i].SearchTime, IntToStr(Stats[i].TableSize)); // ����� ��� ��� X
+  end;
+end;
+
+end.
+
+Модуль ufMain.pas
+unit ufMain;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.Menus, uFiles, uTypes,
+  uDataGenerator,
+  Vcl.StdCtrls, uAnalysis, uHash, uHashTable, ufCharts, Math, Vcl.ExtCtrls;
+
+type
+  TfrmMain = class(TForm)
+    pgclMain: TPageControl;
+    tbstAnalysis: TTabSheet;
+    MainMenu: TMainMenu;
+    itemFile: TMenuItem;
+    OpenDialog: TOpenDialog;
+    subItemOpenFile: TMenuItem;
+    subItemGenerateFile: TMenuItem;
+    lblStart: TLabel;
+    btnStartAnalysis: TButton;
+    lvStats: TListView;
+    lblStatus: TLabel;
+    tbstLaboratory: TTabSheet;
+    lvBucket: TListView;
+    cbBucketsCount: TComboBox;
+    cbHashMethodLab: TComboBox;
+    btnCreateTable: TButton;
+    edKey: TEdit;
+    lblRecordsName: TLabel;
+    lvSearchStat: TListView;
+    btnSearch: TButton;
+    lblBucketsNum: TLabel;
+    edBucket: TEdit;
+    btnGetBucket: TButton;
+    btnGetRandomKey: TButton;
+    btnGetCharts: TButton;
+    pnlAnalysisTop: TPanel;
+    pnlLabLeft: TPanel;
+    pnlLabRight: TPanel;
+    spltLab: TSplitter;
+    procedure subItemOpenFileClick(Sender: TObject);
+    procedure subItemGenerateFileClick(Sender: TObject);
+    procedure btnStartAnalysisClick(Sender: TObject);
+    procedure cbHashMethodChange(Sender: TObject);
+    procedure btnCreateTableClick(Sender: TObject);
+    procedure cbHashMethodLabChange(Sender: TObject);
+    procedure cbBucketsCountChange(Sender: TObject);
+    procedure btnSearchClick(Sender: TObject);
+    procedure btnGetRandomKeyClick(Sender: TObject);
+    procedure btnGetBucketClick(Sender: TObject);
+    procedure btnGetChartsClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+  private
+    { Private declarations }
+  public
+    procedure UpdateStatistic(const Statistic: TStatistic);
+  end;
+
+var
+  frmMain: TfrmMain;
+  isAnalys, isBucketsCount, isHashMethodLab: Boolean;
+  HashTableLab: THashTable;
+
+implementation
+
+{$R *.dfm}
+
+procedure TfrmMain.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  if Assigned(HashTableLab) then
+    FreeAndNil(HashTableLab);
+  if keys <> nil then
+    Keys := nil;
+  Action := caFree
+end;
+
+procedure TfrmMain.subItemOpenFileClick(Sender: TObject);
+begin
+  if OpenDialog.Execute then
+  begin
+    uTypes.FilePath := OpenDialog.FileName;
+    lblStart.Caption := 'It is can take some time';
+    lblStart.Update;
+
+    ReadKeysFromFile(uTypes.FilePath, uTypes.keys);
+    lblStart.Visible := False;
+    pgclMain.Visible := True;
+    ShowMessage('File was loaded.');
+  end;
+end;
+
+procedure TfrmMain.subItemGenerateFileClick(Sender: TObject);
+begin
+  if OpenDialog.Execute then
+  begin
+    uTypes.FilePath := OpenDialog.FileName;
+    lblStart.Caption := 'It is can take some time';
+    lblStart.Update;
+
+    GenerateTestData(uTypes.FilePath, uTypes.RECORDS_COUNT, keys);
+    lblStart.Visible := False;
+    pgclMain.Visible := True;
+    ShowMessage('File "' + uTypes.FilePath + '" was generated.');
+  end;
+end;
+
+procedure TfrmMain.btnCreateTableClick(Sender: TObject);
+var
+  TableSize: UInt32;
+  HashFunc: THashFunc;
+begin
+  if cbHashMethodLab.Text = 'Shift metod' then
+    HashFunc := uHash.ShiftHash
+  else
+    HashFunc := uHash.SquareHash;
+
+  TableSize := StrToInt(cbBucketsCount.Text);
+  HashTableLab := THashTable.Create(HashFunc, TableSize);
+  HashTableLab.LoadFromFile(uTypes.FilePath);
+  btnSearch.Enabled := True;
+  btnGetBucket.Enabled := True;
+  btnGetRandomKey.Enabled := True;
+  edKey.Enabled := True;
+  edBucket.Enabled := True;
+  ShowMessage('Table was succesfully created.');
+end;
+
+procedure TfrmMain.cbBucketsCountChange(Sender: TObject);
+begin
+  isBucketsCount := True;
+  if isBucketsCount and isHashMethodLab then
+    btnCreateTable.Enabled := True;
+end;
+
+procedure TfrmMain.cbHashMethodChange(Sender: TObject);
+begin
+  btnStartAnalysis.Enabled := True;
+end;
+
+procedure TfrmMain.cbHashMethodLabChange(Sender: TObject);
+begin
+  isHashMethodLab := True;
+  if isBucketsCount and isHashMethodLab then
+    btnCreateTable.Enabled := True;
+end;
+
+procedure TfrmMain.btnGetBucketClick(Sender: TObject);
+var
+  I: UInt32;
+  Index: Integer;
+  Bucket: uTypes.TBucket;
+  item: TListItem;
+  TempNode: uTypes.PChainNode;
+begin
+  if not TryStrToInt(edBucket.Text, Index) then
+  begin
+    ShowMessage('Not a valid number.');
+    Exit;
+  end;
+  if not HashTableLab.GetBucket(Index - 1, Bucket) then
+  begin
+    ShowMessage('Bucket is not found.');
+    Exit;
+  end;
+  lvBucket.Items.Clear;
+  I := 0;
+  while I < Bucket.len do
+  begin
+    item := lvBucket.Items.Add;
+    item.Caption := Bucket.Data[I].Key;
+    item.SubItems.Add(Bucket.Data[I].Name);
+    item.SubItems.Add(IntToStr(Bucket.Data[I].Value));
+    Inc(I);
+  end;
+
+  TempNode := Bucket.Overflow;
+  while TempNode <> nil do
+  begin
+    item := lvBucket.Items.Add;
+    item.Caption := TempNode^.Data.Key;
+    item.SubItems.Add(TempNode^.Data.Name);
+    item.SubItems.Add(IntToStr(TempNode^.Data.Value));
+    TempNode := TempNode^.Next;
+  end;
+end;
+
+procedure TfrmMain.btnGetChartsClick(Sender: TObject);
+begin
+  charts := TCharts.Create(Application);
+  charts.AddSeries(uTypes.StatisticsSquare, uTypes.StatisticsShift);
+  charts.Show;
+end;
+
+procedure TfrmMain.btnGetRandomKeyClick(Sender: TObject);
+var
+  I: UInt32;
+begin
+  I := Random(1_000_000);
+  edKey.Text := keys[I];
+end;
+
+procedure TfrmMain.btnSearchClick(Sender: TObject);
+var
+  Key: uTypes.TKey;
+  Data: uTypes.TSearchDataRecord;
+  item: TListItem;
+  isFinded: Boolean;
+begin
+  Key := uTypes.TKey(edKey.Text);
+  isFinded := HashTableLab.Find(Key, Data);
+  if not isFinded then
+  begin
+    ShowMessage('Record is not find');
+    Exit;
+  end;
+  lvSearchStat.Items.Clear;
+  item := lvSearchStat.Items.Add;
+  item.Caption := IntToStr(Data.Bucket);
+  item.SubItems.Add(Data.Name);
+  item.SubItems.Add(IntToStr(Data.Value));
+end;
+
+procedure TfrmMain.btnStartAnalysisClick(Sender: TObject);
+var
+  HashTable: THashTable;
+  I, step: Integer;
+  percentage: Real;
+  item: TListItem;
+begin
+  lvStats.Items.Clear;
+  isAnalys := True;
+  lblStatus.Caption := 'Awaiting...';
+  btnStartAnalysis.Enabled := False;
+  btnGetCharts.Enabled := False;
+  lblStatus.Update;
+  HashTable := nil;
+  step := 0;
+  for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
+  begin
+    try
+      HashTable := THashTable.Create(uHash.SquareHash, uTypes.TABLE_STEPS[I]);
+      StatisticsSquare[I] := AnalysForTables(HashTable, FilePath, keys);
+      item := lvStats.Items.Add;
+      with StatisticsSquare[I] do
+      begin
+        item.Caption := 'Square';
+        item.SubItems.Add(IntToStr(TableSize));
+        item.SubItems.Add(IntToStr(Main));
+        item.SubItems.Add(IntToStr(Collisions));
+      end;
+      Inc(step);
+      percentage := step / 0.74;
+      lblStatus.Caption := 'Progress: ' + FloatToStr(RoundTo(percentage, -2)) + '%';
+      lblStatus.Update;
+    finally
+      Application.ProcessMessages;
+      HashTable.Free;
+    end;
+  end;
+  for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
+  begin
+    try
+      HashTable := THashTable.Create(uHash.ShiftHash, uTypes.TABLE_STEPS[I]);
+      StatisticsShift[I] := AnalysForTables(HashTable, FilePath, keys);
+      item := lvStats.Items.Add;
+      with StatisticsShift[I] do
+      begin
+        item.Caption := 'Shift';
+        item.SubItems.Add(IntToStr(TableSize));
+        item.SubItems.Add(IntToStr(Main));
+        item.SubItems.Add(IntToStr(Collisions));
+      end;
+      Inc(step);
+      percentage := step / 0.74;
+      lblStatus.Caption := 'Progress: ' +
+        FloatToStr(RoundTo(percentage, -2)) + '%';
+      lblStatus.Update;
+    finally
+      Application.ProcessMessages;
+      HashTable.Free;
+    end;
+  end;
+  isAnalys := False;
+  lblStatus.Caption := 'Done!';
+  lblStatus.Update;
+
+  btnStartAnalysis.Enabled := True;
+  btnGetCharts.Enabled := True;
+  ShowMessage('Analysis is done.');
+end;
+
+procedure TfrmMain.UpdateStatistic(const Statistic: TStatistic);
+var
+  item: TListItem;
+begin
+  item := lvStats.Items.Add;
+  with Statistic do
+  begin
+    item.Caption := IntToStr(TableSize);
+    item.SubItems.Add(IntToStr(Main));
+    item.SubItems.Add(IntToStr(Collisions));
+  end;
+end;
+
+end.
+
+Точка входа
+program HashShiftSquare;
+
+uses
+  Vcl.Forms,
+  SysUtils,
+  Classes,
+  ufMain in 'Forms\ufMain.pas' {frmMain},
+  uHashTable in 'Units\uHashTable.pas',
+  uTypes in 'Units\uTypes.pas',
+  uDataGenerator in 'Units\uDataGenerator.pas',
+  uLCG in 'Units\uLCG.pas',
+  uFiles in 'Units\uFiles.pas',
+  uHash in 'Units\uHash.pas',
+  uAnalysis in 'Units\uAnalysis.pas',
+  Vcl.Themes,
+  Vcl.Styles,
+  ufCharts in 'Forms\ufCharts.pas' {Charts};
+
+{$R *.res}
+
+var
+  I: Integer;
+
+begin
+  SetLength(keys, uTypes.RECORDS_COUNT);
+  ufMain.isAnalys := False;
+  ufMain.isBucketsCount := False;
+  ufMain.isHashMethodLab := False;
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  TStyleManager.TrySetStyle('Tablet Dark');
+  Application.CreateForm(TfrmMain, frmMain);
+  Application.CreateForm(TCharts, Charts);
+  for I := Low(uTypes.TABLE_STEPS) to High(uTypes.TABLE_STEPS) do
+     ufMain.frmMain.cbBucketsCount.Items.Add(IntToStr(uTypes.TABLE_STEPS[I]));
+  Application.Run;
+
+
+end.

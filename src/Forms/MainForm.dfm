@@ -42,7 +42,7 @@ object frmMain: TfrmMain
     Top = 3
     Width = 478
     Height = 355
-    ActivePage = tbstLaboratory
+    ActivePage = tbstAnalysis
     Align = alClient
     Style = tsButtons
     TabOrder = 0
@@ -79,9 +79,6 @@ object frmMain: TfrmMain
         ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
-        ExplicitTop = 53
-        ExplicitWidth = 463
-        ExplicitHeight = 265
       end
       object pnlAnalysisTop: TPanel
         Left = 0
@@ -154,8 +151,6 @@ object frmMain: TfrmMain
         Caption = 'pnlLabLeft'
         ShowCaption = False
         TabOrder = 0
-        ExplicitTop = 3
-        ExplicitHeight = 318
         DesignSize = (
           220
           321)
@@ -320,10 +315,6 @@ object frmMain: TfrmMain
         Caption = 'pnlLabRight'
         ShowCaption = False
         TabOrder = 1
-        ExplicitLeft = 247
-        ExplicitTop = -2
-        ExplicitWidth = 226
-        ExplicitHeight = 323
         DesignSize = (
           245
           321)

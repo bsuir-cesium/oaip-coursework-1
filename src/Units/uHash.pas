@@ -82,30 +82,6 @@ begin
 
   Result := Num mod TableSize;
 end;
-//function ShiftHash(const Key: TKey; TableSize: Integer): Integer;
-//var
-//  i: Integer;
-//  num: Int64;
-//  lenTableDigits: Integer;
-//  lenNum: Integer;
-//  halfLen: Integer;
-//  part1, part2: Int64;
-//begin
-//  num := TKeyToNumber(Key);
-//  lenTableDigits := Length(IntToStr(TableSize));
-//
-//  while Length(IntToStr(num)) > lenTableDigits do
-//  begin
-//    lenNum := Length(IntToStr(num));
-//    halfLen := lenNum div 2;
-//    part1 := num div Trunc(Power(10, halfLen));
-//    part2 := num mod Trunc(Power(10, halfLen));
-//
-//    num := part1 + part2;
-//  end;
-//
-//  Result := num mod TableSize;
-//end;
 
 end.
 

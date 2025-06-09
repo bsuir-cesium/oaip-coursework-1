@@ -252,7 +252,7 @@ begin
       end;
       Inc(step);
       percentage := step / 0.74;
-      lblStatus.Caption := 'Progress: ' + FloatToStr(percentage) + '%';
+      lblStatus.Caption := 'Progress: ' + FloatToStr(RoundTo(percentage, -2)) + '%';
       lblStatus.Update;
     finally
       Application.ProcessMessages;
