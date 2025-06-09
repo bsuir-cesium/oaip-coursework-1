@@ -22,7 +22,7 @@ var
   I: Integer;
 
 begin
-  SetLength(keys, uTypes.RECORDS_COUNT);
+  SetLength(keys, uTypes.RECORDS_COUNT + 200);
   MainForm.isAnalys := False;
   MainForm.isBucketsCount := False;
   MainForm.isHashMethodLab := False;
